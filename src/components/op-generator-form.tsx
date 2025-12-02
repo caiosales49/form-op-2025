@@ -38,6 +38,7 @@ const paymentPeriodSchema = z.object({
 
 const formSchema = z.object({
   fullName: z.string().min(3, "Nome completo é obrigatório."),
+  cpf: z.string().min(11, "CPF inválido. Deve conter 11 dígitos.").max(14, "CPF inválido."),
   bankName: z.string().min(2, "Nome do banco é obrigatório."),
   agency: z.string().min(1, "Agência é obrigatória."),
   account: z.string().min(1, "Conta é obrigatória."),
@@ -61,8 +62,9 @@ interface OpGeneratorFormProps {
   isGenerating: boolean;
 }
 
-const defaultValues = {
+const defaultValues: OpFormValues = {
   fullName: "",
+  cpf: "",
   bankName: "",
   agency: "",
   account: "",
@@ -72,6 +74,7 @@ const defaultValues = {
 export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormProps) {
   const [storedUserDetails, setStoredUserDetails] = useLocalStorage("op-user-details", {
     fullName: "",
+    cpf: "",
     bankName: "",
     agency: "",
     account: "",
@@ -93,8 +96,8 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
   });
 
   const onSubmit = (data: OpFormValues) => {
-    const { fullName, bankName, agency, account } = data;
-    setStoredUserDetails({ fullName, bankName, agency, account });
+    const { fullName, cpf, bankName, agency, account } = data;
+    setStoredUserDetails({ fullName, cpf, bankName, agency, account });
     toast({
       title: "Dados salvos!",
       description: "Seus dados foram salvos localmente para uso futuro.",
@@ -113,19 +116,34 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="space-y-4">
               <h3 className="text-lg font-medium flex items-center gap-2 text-primary"><User /> Dados do Beneficiário</h3>
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Seu nome completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Seu nome completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <h3 className="text-lg font-medium flex items-center gap-2 mt-4 text-primary"><Banknote /> Dados Bancários</h3>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField

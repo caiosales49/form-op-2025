@@ -11,6 +11,43 @@ declare module "jspdf" {
   }
 }
 
+function valueToWords(num: number): string {
+    const a = [
+        '', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'
+    ];
+    const b = [
+        '', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'
+    ];
+    const c = [
+        '', 'cem', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'
+    ];
+
+    const [reais, centavos] = num.toFixed(2).split('.').map(Number);
+
+    const numToWords = (n: number) => {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n/10)] + (n % 10 !== 0 ? ' e ' + a[n % 10] : '');
+        if (n === 100) return 'cem';
+        if (n < 1000) return c[Math.floor(n/100)] + (n % 100 !== 0 ? ' e ' + numToWords(n % 100) : '');
+        return '';
+    };
+
+    let words = '';
+    if (reais > 0) {
+        words += numToWords(reais);
+        words += reais === 1 ? ' real' : ' reais';
+    }
+
+    if (centavos > 0) {
+        if (reais > 0) words += ' e ';
+        words += numToWords(centavos);
+        words += centavos === 1 ? ' centavo' : ' centavos';
+    }
+
+    return words.trim();
+}
+
+
 export function generateOpPdf(data: OpFormValues): string {
   const doc = new jsPDF();
 
@@ -30,15 +67,16 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.text("Beneficiário", 14, 40);
   doc.setFont("helvetica", "normal");
   doc.text(`Nome: ${data.fullName}`, 14, 48);
-  doc.text(`Banco: ${data.bankName}`, 14, 56);
-  doc.text(`Agência: ${data.agency} / Conta: ${data.account}`, 14, 64);
+  doc.text(`CPF: ${data.cpf}`, 14, 56);
+  doc.text(`Banco: ${data.bankName}`, 14, 64);
+  doc.text(`Agência: ${data.agency} / Conta: ${data.account}`, 14, 72);
 
-  doc.line(14, 70, doc.internal.pageSize.getWidth() - 14, 70);
+  doc.line(14, 80, doc.internal.pageSize.getWidth() - 14, 80);
 
   // Payment Details Table
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("Detalhes do Pagamento", 14, 80);
+  doc.text("Detalhes do Pagamento", 14, 90);
 
   const tableBody = data.paymentPeriods.map((period) => [
     "Alimentação",
@@ -55,7 +93,7 @@ export function generateOpPdf(data: OpFormValues): string {
   );
 
   doc.autoTable({
-    startY: 85,
+    startY: 95,
     head: [["Descrição", "Período", "Valor"]],
     body: tableBody,
     theme: "grid",
@@ -63,7 +101,7 @@ export function generateOpPdf(data: OpFormValues): string {
     styles: { font: "helvetica", fontSize: 10 },
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY;
+  let finalY = (doc as any).lastAutoTable.finalY;
 
   // Total
   doc.setFontSize(12);
@@ -71,9 +109,26 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.text(
     `Valor Total: R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
     doc.internal.pageSize.getWidth() - 14,
-    finalY + 15,
+    finalY + 10,
     { align: "right" }
   );
+
+  finalY += 20;
+
+  // Receipt Text
+  const totalInWords = valueToWords(total);
+  const periodsText = data.paymentPeriods.map(p => 
+      `de ${format(p.startDate, "dd/MM")}` +
+      ` a ${format(p.endDate, "dd/MM")}`
+    ).join(' e ');
+
+  const receiptText = `Eu, ${data.fullName}, portador do CPF ${data.cpf}, Recebi do Metrópoles Mídia e Comunicação S/A, empresa inscrita no CNPJ/MF: 23.035.415/0001-04, a importância de R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${totalInWords}), referente às despesas de combustível no período ${periodsText}.`;
+  
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  const splitText = doc.splitTextToSize(receiptText, doc.internal.pageSize.getWidth() - 28);
+  doc.text(splitText, 14, finalY + 10);
+  finalY += splitText.length * 7;
 
   // Payment Date
   if (data.paymentPeriods.length > 0) {
@@ -86,7 +141,7 @@ export function generateOpPdf(data: OpFormValues): string {
     
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Data Prevista para Pagamento: ${formattedPaymentDate}`, 14, finalY + 25);
+      doc.text(`Data Prevista para Pagamento: ${formattedPaymentDate}`, 14, finalY + 10);
   }
   
   // Footer
