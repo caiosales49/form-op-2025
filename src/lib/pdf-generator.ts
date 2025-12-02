@@ -68,8 +68,8 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.setFont("helvetica", "bold");
   doc.text("Beneficiário", 14, 40);
   doc.setFont("helvetica", "normal");
-  doc.text(`Nome: ${data.fullName}`, 14, 48);
-  doc.text(`CPF: ${data.cpf}`, 14, 56);
+  doc.text(`Nome/Razão Social: ${data.fullName}`, 14, 48);
+  doc.text(`${data.documentType.toUpperCase()}: ${data.document}`, 14, 56);
   doc.text(`Banco: ${data.bankName}`, 14, 64);
   doc.text(`Agência: ${data.agency} / Conta: ${data.account}`, 14, 72);
 
@@ -123,8 +123,11 @@ export function generateOpPdf(data: OpFormValues): string {
       `de ${format(p.startDate, "dd/MM")}` +
       ` a ${format(p.endDate, "dd/MM")}`
     ).join(' e ');
+  
+  const documentIdentifier = data.documentType.toUpperCase();
+  const documentText = `portador(a) do ${documentIdentifier} ${data.document}`;
 
-  const receiptText = `Eu, ${data.fullName}, portador do CPF ${data.cpf}, Recebi do Metrópoles Mídia e Comunicação S/A, empresa inscrita no CNPJ/MF: 23.035.415/0001-04, a importância de R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${totalInWords}), referente às despesas de ${expenseDescription} no(s) período(s) ${periodsText}.`;
+  const receiptText = `Eu, ${data.fullName}, ${documentText}, Recebi do Metrópoles Mídia e Comunicação S/A, empresa inscrita no CNPJ/MF: 23.035.415/0001-04, a importância de R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${totalInWords}), referente às despesas de ${expenseDescription} no(s) período(s) ${periodsText}.`;
   
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
@@ -144,13 +147,21 @@ export function generateOpPdf(data: OpFormValues): string {
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text(`Data Prevista para Pagamento: ${formattedPaymentDate}`, 14, finalY + 10);
+      finalY += 10
   }
   
-  // Footer
-  const footerY = doc.internal.pageSize.getHeight() - 30;
-  doc.text("__________________________________", doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center'});
+  // Footer / Signature
+  const footerY = doc.internal.pageSize.getHeight() - 40;
+  const generationDate = format(new Date(), "'Brasília, 'dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  doc.setFontSize(11);
+  doc.text(generationDate, doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
+  
+  doc.text("__________________________________", doc.internal.pageSize.getWidth() / 2, footerY + 15, { align: 'center'});
   doc.setFontSize(10);
-  doc.text("Assinatura do Responsável", doc.internal.pageSize.getWidth() / 2, footerY + 5, { align: 'center'});
+  doc.text(data.fullName, doc.internal.pageSize.getWidth() / 2, footerY + 20, { align: 'center'});
+  doc.text(data.document, doc.internal.pageSize.getWidth() / 2, footerY + 25, { align: 'center'});
 
   return doc.output("datauristring");
 }
+
+    

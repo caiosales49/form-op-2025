@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2, Fuel, Utensils } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2, Utensils, Building } from "lucide-react";
 import React from "react";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -42,13 +42,17 @@ const formSchema = z.object({
   paymentType: z.enum(["fuel", "food_and_fuel"], {
     required_error: "Você precisa selecionar um tipo de pagamento.",
   }),
-  fullName: z.string().min(3, "Nome completo é obrigatório."),
-  cpf: z.string().min(11, "CPF inválido. Deve conter 11 dígitos.").max(14, "CPF inválido."),
+  documentType: z.enum(["cpf", "cnpj"], {
+    required_error: "Selecione o tipo de documento.",
+  }),
+  fullName: z.string().min(3, "Nome completo ou Razão Social é obrigatório."),
+  document: z.string().min(1, "CPF/CNPJ é obrigatório."),
   bankName: z.string().min(2, "Nome do banco é obrigatório."),
   agency: z.string().min(1, "Agência é obrigatória."),
   account: z.string().min(1, "Conta é obrigatória."),
   paymentPeriods: z.array(paymentPeriodSchema).min(1, "Adicione pelo menos um período de pagamento."),
 }).superRefine((data, ctx) => {
+  // Validação de Períodos
   data.paymentPeriods.forEach((period, index) => {
     if (period.startDate > period.endDate) {
       ctx.addIssue({
@@ -58,7 +62,20 @@ const formSchema = z.object({
       });
     }
   });
+
+  // Validação de CPF/CNPJ
+  const documentRegex = data.documentType === 'cpf' 
+    ? /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ 
+    : /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
+  if (!documentRegex.test(data.document)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Formato de ${data.documentType.toUpperCase()} inválido.`,
+      path: ["document"],
+    });
+  }
 });
+
 
 export type OpFormValues = z.infer<typeof formSchema>;
 
@@ -69,8 +86,9 @@ interface OpGeneratorFormProps {
 
 const defaultValues: OpFormValues = {
   paymentType: "food_and_fuel",
+  documentType: "cpf",
   fullName: "",
-  cpf: "",
+  document: "",
   bankName: "",
   agency: "",
   account: "",
@@ -79,8 +97,9 @@ const defaultValues: OpFormValues = {
 
 export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormProps) {
   const [storedUserDetails, setStoredUserDetails] = useLocalStorage("op-user-details", {
+    documentType: "cpf",
     fullName: "",
-    cpf: "",
+    document: "",
     bankName: "",
     agency: "",
     account: "",
@@ -95,22 +114,49 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
       ...storedUserDetails,
     },
   });
-  
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "paymentPeriods",
   });
 
+  const watchDocumentType = form.watch("documentType");
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    let formattedValue = value.replace(/\D/g, "");
+
+    if (watchDocumentType === "cpf") {
+      formattedValue = formattedValue.slice(0, 11);
+      formattedValue = formattedValue.replace(/(\d{3})(\d)/, "$1.$2");
+      formattedValue = formattedValue.replace(/(\d{3})(\d)/, "$1.$2");
+      formattedValue = formattedValue.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+      formattedValue = formattedValue.slice(0, 14);
+      formattedValue = formattedValue.replace(/^(\d{2})(\d)/, "$1.$2");
+      formattedValue = formattedValue.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+      formattedValue = formattedValue.replace(/\.(\d{3})(\d)/, ".$1/$2");
+      formattedValue = formattedValue.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    
+    form.setValue("document", formattedValue, { shouldValidate: true });
+  };
+  
+  React.useEffect(() => {
+    form.setValue("document", "", { shouldValidate: true });
+  }, [watchDocumentType, form]);
+
+
   const onSubmit = (data: OpFormValues) => {
-    const { fullName, cpf, bankName, agency, account } = data;
-    setStoredUserDetails({ fullName, cpf, bankName, agency, account });
+    const { documentType, fullName, document, bankName, agency, account } = data;
+    setStoredUserDetails({ documentType, fullName, document, bankName, agency, account });
     toast({
       title: "Dados salvos!",
       description: "Seus dados foram salvos localmente para uso futuro.",
     });
     onFormSubmit(data);
   };
-  
+
   return (
     <Card className="w-full shadow-lg">
       <CardHeader>
@@ -161,15 +207,47 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
 
             <div className="space-y-4">
               <h3 className="text-lg font-medium flex items-center gap-2 text-primary"><User /> Dados do Beneficiário</h3>
+
+              <FormField
+                control={form.control}
+                name="documentType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Tipo de Documento</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex gap-4"
+                      >
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <RadioGroupItem value="cpf" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Pessoa Física (CPF)</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2">
+                           <FormControl>
+                            <RadioGroupItem value="cnpj" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Pessoa Jurídica (CNPJ)</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel>Nome Completo / Razão Social</FormLabel>
                       <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
+                        <Input placeholder="Seu nome ou da empresa" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -177,12 +255,16 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
                 />
                  <FormField
                   control={form.control}
-                  name="cpf"
+                  name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CPF</FormLabel>
+                      <FormLabel>{watchDocumentType.toUpperCase()}</FormLabel>
                       <FormControl>
-                        <Input placeholder="000.000.000-00" {...field} />
+                        <Input 
+                          placeholder={watchDocumentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'} 
+                          {...field}
+                          onChange={handleDocumentChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -363,3 +445,5 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
     </Card>
   );
 }
+
+    
