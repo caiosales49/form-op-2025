@@ -99,7 +99,7 @@ export function generateOpPdf(data: OpFormValues): string {
     head: [["Descrição", "Período", "Valor"]],
     body: tableBody,
     theme: "grid",
-    headStyles: { fillColor: [22, 163, 74], textColor: 255 }, // Green header
+    headStyles: { fillColor: [194, 12, 20] }, // Updated primary color
     styles: { font: "helvetica", fontSize: 10 },
   });
 
@@ -151,7 +151,7 @@ export function generateOpPdf(data: OpFormValues): string {
   }
   
   // Footer / Signature
-  const footerY = doc.internal.pageSize.getHeight() - 40;
+  const footerY = doc.internal.pageSize.getHeight() - 60;
   const generationDate = format(new Date(), "'Brasília, 'dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   doc.setFontSize(11);
   doc.text(generationDate, doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
@@ -161,7 +161,10 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.text(data.fullName, doc.internal.pageSize.getWidth() / 2, footerY + 20, { align: 'center'});
   doc.text(data.document, doc.internal.pageSize.getWidth() / 2, footerY + 25, { align: 'center'});
 
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("Autorizado por: Luiz Estevão de Oliveira Neto", 14, footerY + 45);
+
+
   return doc.output("datauristring");
 }
-
-    

@@ -84,7 +84,7 @@ interface OpGeneratorFormProps {
   isGenerating: boolean;
 }
 
-const defaultValues: OpFormValues = {
+const defaultValues: Partial<OpFormValues> = {
   paymentType: "food_and_fuel",
   documentType: "cpf",
   fullName: "",
@@ -112,7 +112,7 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
     defaultValues: {
       ...defaultValues,
       ...storedUserDetails,
-    },
+    } as OpFormValues,
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -445,5 +445,3 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
     </Card>
   );
 }
-
-    
