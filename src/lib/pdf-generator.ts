@@ -73,12 +73,15 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.text(`Banco: ${data.bankName}`, 14, 64);
   doc.text(`Agência: ${data.agency} / Conta: ${data.account}`, 14, 72);
 
-  doc.line(14, 80, doc.internal.pageSize.getWidth() - 14, 80);
+  doc.setFontSize(10);
+  doc.text("Autorizado por: Luiz Estevão de Oliveira Neto", 14, 80);
+
+  doc.line(14, 88, doc.internal.pageSize.getWidth() - 14, 88);
 
   // Payment Details Table
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("Detalhes do Pagamento", 14, 90);
+  doc.text("Detalhes do Pagamento", 14, 98);
 
   const tableBody = data.paymentPeriods.map((period) => [
     paymentDescription,
@@ -95,7 +98,7 @@ export function generateOpPdf(data: OpFormValues): string {
   );
 
   doc.autoTable({
-    startY: 95,
+    startY: 103,
     head: [["Descrição", "Período", "Valor"]],
     body: tableBody,
     theme: "grid",
@@ -160,11 +163,6 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.setFontSize(10);
   doc.text(data.fullName, doc.internal.pageSize.getWidth() / 2, footerY + 20, { align: 'center'});
   doc.text(data.document, doc.internal.pageSize.getWidth() / 2, footerY + 25, { align: 'center'});
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("Autorizado por: Luiz Estevão de Oliveira Neto", 14, footerY + 45);
-
 
   return doc.output("datauristring");
 }
