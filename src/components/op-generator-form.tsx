@@ -121,6 +121,8 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
   });
 
   const watchDocumentType = form.watch("documentType");
+  const isInitialMount = React.useRef(true);
+
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -143,6 +145,10 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
   };
   
   React.useEffect(() => {
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+    }
     form.setValue("document", "", { shouldValidate: true });
   }, [watchDocumentType, form]);
 

@@ -6,6 +6,7 @@ import { OpGeneratorForm, type OpFormValues } from "@/components/op-generator-fo
 import { PdfPreview } from "@/components/pdf-preview";
 import { generateOpPdf } from "@/lib/pdf-generator";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
@@ -19,7 +20,7 @@ export default function Home() {
       try {
         const uri = generateOpPdf(data);
         setPdfDataUri(uri);
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (error) {
         console.error("Failed to generate PDF", error);
         toast({
@@ -32,6 +33,10 @@ export default function Home() {
       }
     }, 50);
   };
+  
+  const handleNewOp = () => {
+    setPdfDataUri(null);
+  }
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -46,8 +51,16 @@ export default function Home() {
       </header>
 
       <div className="max-w-4xl mx-auto">
-        <OpGeneratorForm onFormSubmit={handleFormSubmit} isGenerating={isGenerating} />
-        {pdfDataUri && <PdfPreview pdfDataUri={pdfDataUri} />}
+        {!pdfDataUri ? (
+          <OpGeneratorForm onFormSubmit={handleFormSubmit} isGenerating={isGenerating} />
+        ) : (
+          <div className="space-y-4">
+             <Button onClick={handleNewOp} className="w-full text-lg py-6">
+                Gerar Nova OP
+             </Button>
+            <PdfPreview pdfDataUri={pdfDataUri} />
+          </div>
+        )}
       </div>
     </main>
   );
