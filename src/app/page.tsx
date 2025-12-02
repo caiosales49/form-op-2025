@@ -41,7 +41,7 @@ export default function Home() {
           Gerador de OP
         </h1>
         <p className="text-muted-foreground mt-2">
-          Crie, visualize e analise suas Ordens de Pagamento com facilidade.
+          Crie e visualize suas Ordens de Pagamento com facilidade.
         </p>
       </header>
 
