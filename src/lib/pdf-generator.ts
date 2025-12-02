@@ -50,7 +50,7 @@ function valueToWords(num: number): string {
 
 export function generateOpPdf(data: OpFormValues): string {
   const doc = new jsPDF();
-  const paymentDescription = data.paymentType === 'fuel' ? 'Combustível' : 'Alimentação';
+  const paymentDescription = data.paymentType === 'fuel' ? 'Combustível' : 'Alimentação e Combustível';
   const expenseDescription = data.paymentType === 'fuel' ? 'combustível' : 'alimentação e combustível';
 
   // Header
