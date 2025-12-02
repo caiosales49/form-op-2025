@@ -50,6 +50,8 @@ function valueToWords(num: number): string {
 
 export function generateOpPdf(data: OpFormValues): string {
   const doc = new jsPDF();
+  const paymentDescription = data.paymentType === 'fuel' ? 'Combustível' : 'Alimentação';
+  const expenseDescription = data.paymentType === 'fuel' ? 'combustível' : 'alimentação e combustível';
 
   // Header
   doc.setFontSize(22);
@@ -79,7 +81,7 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.text("Detalhes do Pagamento", 14, 90);
 
   const tableBody = data.paymentPeriods.map((period) => [
-    "Alimentação",
+    paymentDescription,
     `${format(period.startDate, "dd/MM/yy")} a ${format(
       period.endDate,
       "dd/MM/yy"
@@ -122,7 +124,7 @@ export function generateOpPdf(data: OpFormValues): string {
       ` a ${format(p.endDate, "dd/MM")}`
     ).join(' e ');
 
-  const receiptText = `Eu, ${data.fullName}, portador do CPF ${data.cpf}, Recebi do Metrópoles Mídia e Comunicação S/A, empresa inscrita no CNPJ/MF: 23.035.415/0001-04, a importância de R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${totalInWords}), referente às despesas de combustível no período ${periodsText}.`;
+  const receiptText = `Eu, ${data.fullName}, portador do CPF ${data.cpf}, Recebi do Metrópoles Mídia e Comunicação S/A, empresa inscrita no CNPJ/MF: 23.035.415/0001-04, a importância de R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${totalInWords}), referente às despesas de ${expenseDescription} no(s) período(s) ${periodsText}.`;
   
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");

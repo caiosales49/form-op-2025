@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2, Fuel, Utensils } from "lucide-react";
 import React from "react";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +39,9 @@ const paymentPeriodSchema = z.object({
 });
 
 const formSchema = z.object({
+  paymentType: z.enum(["fuel", "food_and_fuel"], {
+    required_error: "Você precisa selecionar um tipo de pagamento.",
+  }),
   fullName: z.string().min(3, "Nome completo é obrigatório."),
   cpf: z.string().min(11, "CPF inválido. Deve conter 11 dígitos.").max(14, "CPF inválido."),
   bankName: z.string().min(2, "Nome do banco é obrigatório."),
@@ -63,6 +68,7 @@ interface OpGeneratorFormProps {
 }
 
 const defaultValues: OpFormValues = {
+  paymentType: "food_and_fuel",
   fullName: "",
   cpf: "",
   bankName: "",
@@ -114,6 +120,45 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="space-y-4">
+               <FormField
+                control={form.control}
+                name="paymentType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-lg font-medium flex items-center gap-2 text-primary"><Utensils /> Tipo de Pagamento</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col md:flex-row gap-4"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary flex-1">
+                          <FormControl>
+                            <RadioGroupItem value="food_and_fuel" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Alimentação e Combustível
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary flex-1">
+                          <FormControl>
+                            <RadioGroupItem value="fuel" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Apenas Combustível
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <Separator />
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium flex items-center gap-2 text-primary"><User /> Dados do Beneficiário</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -191,7 +236,7 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Períodos de Pagamento (Alimentação)</h3>
+              <h3 className="text-lg font-medium">Períodos de Pagamento</h3>
               {fields.map((item, index) => (
                 <div key={item.id} className="flex flex-col md:flex-row items-start md:items-end gap-4 p-4 border rounded-lg relative bg-background/50">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-grow">
