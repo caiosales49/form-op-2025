@@ -116,21 +116,27 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
   });
 
   const { toast } = useToast();
-
+  
   const form = useForm<OpFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues as OpFormValues,
   });
   
+  const [isMounted, setIsMounted] = React.useState(false);
+
   React.useEffect(() => {
-    if(storedUserDetails) {
+    setIsMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if(storedUserDetails && isMounted) {
         form.reset({
             ...defaultValues,
             ...storedUserDetails,
             paymentPeriods: [], // Keep periods empty
         });
     }
-  }, [storedUserDetails, form]);
+  }, [storedUserDetails, form, isMounted]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -268,9 +274,9 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo / Razão Social</FormLabel>
+                      <FormLabel>{watchDocumentType === 'cpf' ? 'Nome Completo' : 'Razão Social'}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Seu nome ou da empresa" {...field} />
+                        <Input placeholder={watchDocumentType === 'cpf' ? 'Seu nome completo' : 'Razão social da empresa'} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -313,7 +319,7 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
                                 !field.value && "text-muted-foreground"
                               )}
                             >
-                              {field.value
+                              {isMounted && field.value
                                 ? banks.find(
                                     (bank) => bank.value === field.value
                                   )?.label

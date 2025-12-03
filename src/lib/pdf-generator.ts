@@ -64,11 +64,12 @@ export function generateOpPdf(data: OpFormValues): string {
   doc.line(14, 28, doc.internal.pageSize.getWidth() - 14, 28);
 
   // Payee Info
+  const fullNameLabel = data.documentType === 'cpf' ? 'Nome' : 'Razão Social';
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.text("Beneficiário", 14, 40);
   doc.setFont("helvetica", "normal");
-  doc.text(`Nome/Razão Social: ${data.fullName}`, 14, 48);
+  doc.text(`${fullNameLabel}: ${data.fullName}`, 14, 48);
   doc.text(`${data.documentType.toUpperCase()}: ${data.document}`, 14, 56);
   doc.text(`Banco: ${data.bankName}`, 14, 64);
   doc.text(`Agência: ${data.agency} / Conta: ${data.account}`, 14, 72);
