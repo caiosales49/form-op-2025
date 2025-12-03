@@ -293,7 +293,7 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
                   control={form.control}
                   name="bankName"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem className="flex flex-col justify-end">
                       <FormLabel>Banco</FormLabel>
                        <Popover>
                         <PopoverTrigger asChild>
