@@ -119,11 +119,18 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
 
   const form = useForm<OpFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      ...defaultValues,
-      ...storedUserDetails,
-    } as OpFormValues,
+    defaultValues: defaultValues as OpFormValues,
   });
+  
+  React.useEffect(() => {
+    if(storedUserDetails) {
+        form.reset({
+            ...defaultValues,
+            ...storedUserDetails,
+            paymentPeriods: [], // Keep periods empty
+        });
+    }
+  }, [storedUserDetails, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
