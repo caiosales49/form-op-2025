@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -5,7 +6,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2, Utensils, Building } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Banknote, User, Loader2, Utensils, Check, ChevronsUpDown } from "lucide-react";
 import React from "react";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -27,10 +28,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "./ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { banks } from "@/lib/banks";
 
 const paymentPeriodSchema = z.object({
   startDate: z.date({ required_error: "Data inicial é obrigatória." }),
@@ -283,11 +293,58 @@ export function OpGeneratorForm({ onFormSubmit, isGenerating }: OpGeneratorFormP
                   control={form.control}
                   name="bankName"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex flex-col">
                       <FormLabel>Banco</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do banco" {...field} />
-                      </FormControl>
+                       <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value
+                                ? banks.find(
+                                    (bank) => bank.value === field.value
+                                  )?.label
+                                : "Selecione o banco"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Pesquisar banco..." />
+                            <CommandList>
+                                <CommandEmpty>Nenhum banco encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                {banks.map((bank) => (
+                                    <CommandItem
+                                    value={bank.label}
+                                    key={bank.value}
+                                    onSelect={() => {
+                                        form.setValue("bankName", bank.value)
+                                    }}
+                                    >
+                                    <Check
+                                        className={cn(
+                                        "mr-2 h-4 w-4",
+                                        bank.value === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                    />
+                                    {bank.label}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
